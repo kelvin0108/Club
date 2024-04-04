@@ -4,10 +4,10 @@ import numpy as np
 H = np.array([[1, 1], [3, 1], [3, 2], [0, 3]])
 G = np.array([3, 3])
 MAP = [
-    "SFFF",
-    "FHFH",
-    "FFFH",
-    "HFFG"
+    "S","F","F","F",
+    "F","H","F","H",
+    "F","F","F","H",
+    "H","F","F","G"
 ]
 
 
@@ -53,3 +53,9 @@ class Game:
 
     def sample_action(self):
         return np.random.choice(self.action_space(), 1).item()
+    def show_map(self):
+        MAP[self.state[0] + self.state[1]*4] = "P"
+        map = ""
+        for i in range(0, len(MAP), 4):
+            map += " ".join(MAP[i:i+4]) + "\n"
+        return map
