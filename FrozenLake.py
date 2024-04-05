@@ -47,11 +47,11 @@ class Game:
         return np.random.choice(self.action_space(), 1).item()
     def show_map(self):
         MAP = [
-    "S","F","F","F",
-    "F","H","F","H",
-    "F","F","F","H",
-    "H","F","F","G"
-    ]
+            "S","F","F","F",
+            "F","H","F","H",
+            "F","F","F","H",
+            "H","F","F","G"
+        ]
         MAP[self.state[0] + self.state[1]*4] = "P"
         map = ""
         for i in range(0, len(MAP), 4):
