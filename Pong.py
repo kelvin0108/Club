@@ -12,6 +12,9 @@ class Game:
         self.game_mode = game_mode
         self.action_space_size = 3
         self.bar_length = 30
+        self.frame_limit = 8000
+        self.hide_info = False
+        self.skip_step = False
 
     def reset(self, render):
         self.pause = True
@@ -42,14 +45,24 @@ class Game:
         return self.ball_angle, self.ball_speed, self.ball_position
 
     def step(self, action): 
-        frame_limit = 8000
         detect_range = 45
         self.action = action
         self.stop_one_sec = False
+        self.skip_step = False
         if self.game_mode == "human":
             key = keyboard.read_key()
-            while key != "down" and key != "space" and key != "up" and key != "enter":
+            while key != "down" and key != "space" and key != "up" and key != "enter" and key != "shift" and key != "right shift" and key != "esc":
                 key = keyboard.read_key()
+            if key == "esc":
+                sys.exit()
+            elif key == "shift" or key == "right shift":
+                if self.hide_info == False:    
+                    self.hide_info = True
+                else:
+                    self.hide_info = False
+                self.render()
+                self.skip_step = True
+                time.sleep(0.5)
             if key == "down":
                 self.action = 0
             elif key == "space":
@@ -63,7 +76,7 @@ class Game:
 
         elif self.game_mode == "ai":
             assert 0 <= action <= self.action_space_size - 1, f"Error: Action values should fall within the interval [0, {self.action_space_size-1}]."
-        if self.pause == False:   
+        if self.pause == False and self.skip_step == False:   
             if self.player_score > self.opponent_score:
                 assert self.done == False, "The game has ended. You win."
             elif self.opponent_score > self.player_score:
@@ -87,7 +100,7 @@ class Game:
                     self.opponent_bar_top -= 1
                 self.state[self.opponent_bar_top:self.opponent_bar_top + self.bar_length, 208] = 2
                 self.update_ball_position()
-                if self.player_score == 21 or self.opponent_score == 21 or self.frame == frame_limit:
+                if self.player_score == 21 or self.opponent_score == 21 or self.frame == self.frame_limit:
                     self.done = True
                 self.frame += 1
                 if self.render_ == 1:
@@ -134,17 +147,26 @@ class Game:
 
         
         if self.pause == False:
-            self.DISPLAY.fill((0, 0, 0))
-            pygame.draw.circle(self.DISPLAY, (255, 255, 255), (self.ball_position[0], self.ball_position[1]), 4, 0)
-            pygame.draw.rect(self.DISPLAY, (255, 255, 255), (1, self.bar_top, 5, self.bar_length))
-            pygame.draw.rect(self.DISPLAY, (255, 255, 255), (204, self.opponent_bar_top, 5, self.bar_length))
-            font = pygame.font.Font(None, 25)
-            frame_text = font.render("Frame: {}".format(self.frame), True, (255, 255, 255))
-            self.DISPLAY.blit(frame_text, (70, 140))
-            frame_text = font.render("You: {}".format(self.player_score), True, (255, 255, 255))
-            self.DISPLAY.blit(frame_text, (10, 10))
-            frame_text = font.render("Opponent: {}".format(self.opponent_score), True, (255, 255, 255))
-            self.DISPLAY.blit(frame_text, (10, 30))
+            if self.hide_info == True:
+                self.DISPLAY.fill((0, 0, 0))
+                pygame.draw.circle(self.DISPLAY, (255, 255, 255), (self.ball_position[0], self.ball_position[1]), 4, 0)
+                pygame.draw.rect(self.DISPLAY, (255, 255, 255), (1, self.bar_top, 5, self.bar_length))
+                pygame.draw.rect(self.DISPLAY, (255, 255, 255), (204, self.opponent_bar_top, 5, self.bar_length))
+            else:
+                self.DISPLAY.fill((0, 0, 0))
+                pygame.draw.circle(self.DISPLAY, (255, 255, 255), (self.ball_position[0], self.ball_position[1]), 4, 0)
+                pygame.draw.rect(self.DISPLAY, (255, 255, 255), (1, self.bar_top, 5, self.bar_length))
+                pygame.draw.rect(self.DISPLAY, (255, 255, 255), (204, self.opponent_bar_top, 5, self.bar_length))
+                font = pygame.font.Font(None, 25)
+                frame_text = font.render("Frame: {}".format(self.frame), True, (255, 255, 255))
+                self.DISPLAY.blit(frame_text, (70, 140))
+                frame_text = font.render("You: {}".format(self.player_score), True, (255, 255, 255))
+                self.DISPLAY.blit(frame_text, (10, 10))
+                frame_text = font.render("Opponent: {}".format(self.opponent_score), True, (255, 255, 255))
+                self.DISPLAY.blit(frame_text, (10, 30))
+                font = pygame.font.Font(None, 21)
+                frame_text = font.render("(limit: {})".format(self.frame_limit), True, (255, 255, 255))
+                self.DISPLAY.blit(frame_text, (65, 120))
         elif self.pause == True:
             self.DISPLAY.fill((0, 0, 0))
             title = pygame.font.Font(None, 30)
@@ -152,30 +174,27 @@ class Game:
             self.DISPLAY.blit(frame_text, (5, 10))
             font = pygame.font.Font(None, 20)
             frame_text = font.render(
-                "1.press enter to start ",
+                "1.press enter to start or pause",
                 True, (255, 255, 255))
             self.DISPLAY.blit(frame_text, (10, 35))
             frame_text = font.render(
-                "  or show rules again",
+                "2.press esc to close the game",
                 True, (255, 255, 255))
             self.DISPLAY.blit(frame_text, (10, 55))
-            font = pygame.font.Font(None, 20)
             frame_text = font.render(
-                "2.your bar is on the left",
+                "3.press shift to hide the info",
                 True, (255, 255, 255))
             self.DISPLAY.blit(frame_text, (10, 75))
-            font = pygame.font.Font(None, 20)
             frame_text = font.render(
-                "3.using up and down to move",
+                "4.using up and down to move",
                 True, (255, 255, 255))
             self.DISPLAY.blit(frame_text, (10, 95))
             frame_text = font.render(
-                " using space to stay stopped",
+                "  using space to stay stopped",
                 True, (255, 255, 255))
             self.DISPLAY.blit(frame_text, (10, 115))
-            font = pygame.font.Font(None, 20)
             frame_text = font.render(
-                "4.get 21 points to win!",
+                "5.you are left, get 21 to win!",
                 True, (255, 255, 255))
             self.DISPLAY.blit(frame_text, (10, 135))
 
@@ -185,10 +204,11 @@ class Game:
         while True:
             if self.pause == False:
                 self.step(4)
+                print(self.hide_info)
                 pygame.display.update()
                 clock.tick(120)
                 if self.stop_one_sec:
-                    time.sleep(1)
+                    time.sleep(0.5)
                     
 
             else:
@@ -198,7 +218,9 @@ class Game:
                     self.render()
                     pygame.display.update()
                     clock.tick(120)
-                    time.sleep(1)
+                    time.sleep(0.5)
+                elif key == "esc":
+                    sys.exit()
             
 
 
@@ -206,3 +228,4 @@ clock = pygame.time.Clock()
 game = Game("human")
 game.reset(1)
 game.run_game()
+
