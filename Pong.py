@@ -28,7 +28,7 @@ class Game:
             self.render()
             pygame.display.update()
             info = {"player": self.player_score, "opponent": self.opponent_score}
-        return self.state.reshape((1, 210, 160)), self.reward, self.done, self.frame, info
+        return self.state.reshape((1, 210, 160)), info
 
     def reset_ball_and_bar(self):
         self.ball_speed = 2
