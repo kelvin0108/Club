@@ -1,13 +1,15 @@
 import math
 import random
 
+import numpy as np
 import pygame
 import sys
 
 
 class Game:
-    def __init__(self, game_mode="human"):
+    def __init__(self, game_mode="human", render=1):
         self.game_mode = game_mode
+        self.render = render
 
         pygame.init()
         self.clock = pygame.time.Clock()
@@ -16,14 +18,28 @@ class Game:
         self.opponent_score = 0
 
         self.reset()
-        self.main_loop()
+        if self.game_mode == "human":
+            self.main_loop()
 
     def reset(self):
+        self.reset_score()
+        self.reset_game()
+
+        return self.get_state(), {"player": self.player_score, "opponent": self.opponent_score}
+
+    def reset_score(self):
+        self.player_score = 0
+        self.opponent_score = 0
+
+    def reset_game(self):
         # Setup screen.
         self.screen_width = 210
         self.screen_height = 160
-        self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
-        pygame.display.set_caption("Pong")
+        if self.render == 1:
+            self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
+            pygame.display.set_caption("Pong")
+        elif self.render == 0:
+            self.screen = pygame.Surface((self.screen_width, self.screen_height))
 
         # Setup object.
         self.ball_x = self.screen_width / 2 - 4
@@ -39,17 +55,15 @@ class Game:
         self.opponent = pygame.Rect(self.opponent_x, self.opponent_y, 8, self.pad_size)
 
         # Setup movement.
-        self.offset = 2
-
         temp = random.randint(1, 4)
         self.ball_dir = random.uniform((math.pi * (3 * temp - 2)) / 6, (math.pi * (3 * temp - 1)) / 6)
-        self.ball_speed = 1.5 / self.offset
+        self.ball_speed = 1.5 / 2
 
         self.ball_xv = math.cos(self.ball_dir) * self.ball_speed
         self.ball_yv = math.sin(self.ball_dir) * self.ball_speed
 
-        self.player_speed = 2 / self.offset
-        self.opponent_speed = 1.2 / self.offset
+        self.player_speed = 2 / 2
+        self.opponent_speed = 1.2 / 2
 
         self.up, self.down = False, False
         self.player_en, self.opponent_en = False, False
@@ -71,26 +85,20 @@ class Game:
                     if event.key == pygame.K_UP:
                         self.up = False
 
-            action = 0
-            if self.game_mode == "human":
-                # None: 0. Up: 1. Down: 2.
-                if self.up and self.down:
-                    action = 0
-                elif self.up:
-                    action = 1
-                elif self.down:
-                    action = 2
-                else:
-                    action = 0
-            else:  # Ai.
-                pass
+            # None: 0. Up: 1. Down: 2.
+            if self.up and self.down:
+                action = 0
+            elif self.up:
+                action = 1
+            elif self.down:
+                action = 2
+            else:
+                action = 0
             state, reward, done, info = self.step(action)
-            if reward != 0:
-                print(info)
             if done:
-                self.player_score = 0
-                self.opponent_score = 0
                 self.reset()
+            # if reward != 0:
+            #     print(info)
 
 
     def step(self, action):
@@ -114,11 +122,11 @@ class Game:
 
         if self.player_en and player_coll:
             self.ball_dir = math.radians(70 - random.random() * 140)
-            self.ball_speed = 3 / self.offset
+            self.ball_speed = 3 / 2
             self.player_en = False
         if self.opponent_en and opponent_coll:
             self.ball_dir = math.radians(110 + random.random() * 140)
-            self.ball_speed = 3 / self.offset
+            self.ball_speed = 3 / 2
             self.opponent_en = False
 
         self.ball.x = self.ball_x
@@ -154,27 +162,28 @@ class Game:
         self.opponent.x = self.opponent_x
         self.opponent.y = self.opponent_y
 
-        self.screen.fill((0, 0, 0))
-        pygame.draw.rect(self.screen, (255, 255, 255), self.ball)
-        pygame.draw.rect(self.screen, (255, 255, 255), self.player)
-        pygame.draw.rect(self.screen, (255, 255, 255), self.opponent)
+        if self.render == 1:
+            self.screen.fill((0, 0, 0))
+            pygame.draw.rect(self.screen, (255, 255, 255), self.ball)
+            pygame.draw.rect(self.screen, (255, 255, 255), self.player)
+            pygame.draw.rect(self.screen, (255, 255, 255), self.opponent)
 
-        pygame.display.flip()
-        self.clock.tick(60 * self.offset)
+            pygame.display.flip()
+            self.clock.tick(60 * 2)
 
         # Returns.
-        info = {"player": self.player_score, "opponent": self.opponent_score}
         done = False
         reward = 0
         if self.ball_x + 8 > self.screen_width:
             self.player_score += 1
             reward = 1
-            self.reset()
+            self.reset_game()
         if self.ball_x < 0:
             self.opponent_score += 1
             reward = -1
-            self.reset()
+            self.reset_game()
 
+        info = {"player": self.player_score, "opponent": self.opponent_score}
         if self.player_score >= 20 or self.opponent_score >= 20:
             done = True
 
@@ -189,9 +198,15 @@ class Game:
                     state[y].append(0)
                 else:
                     state[y].append(1)
-        return state
+        return np.array(state).reshape((1, 210, 160))
+
+    def action_space(self):
+        return 3
+
+    def sample_action(self):
+        return random.randint(0, self.action_space() - 1)
 
 
-game = Game(game_mode="human")
+# game = Game(game_mode="human", render=1)
 
 
