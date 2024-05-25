@@ -213,7 +213,6 @@ class Game:
             done = True
 
         state = (self.ball_x, self.ball_y, self.ball_dir, self.player_y)
-        
         return state, reward, done, info
 
     def action_space(self):
