@@ -25,7 +25,7 @@ class Game:
         self.reset_score()
         self.reset_game()
 
-        return self.get_state(), {"player": self.player_score, "opponent": self.opponent_score}
+        return self.ball_x, self.ball_y, self.ball_dir, self.player_y, {"player": self.player_score, "opponent": self.opponent_score}
 
     def reset_score(self):
         self.player_score = 0
@@ -94,11 +94,11 @@ class Game:
                 action = 2
             else:
                 action = 0
-            state, reward, done, info = self.step(action)
+            self.ball_x, self.ball_y, self.ball_dir, self.player_y, reward, done, info = self.step(action)
             if done:
                 self.reset()
-            # if reward != 0:
-            #     print(info)
+            if reward != 0:
+                print(info)
 
 
     def step(self, action):
@@ -187,18 +187,9 @@ class Game:
         if self.player_score >= 20 or self.opponent_score >= 20:
             done = True
 
-        return self.get_state(), reward, done, info
+        return self.ball_x, self.ball_y, self.ball_dir, self.player_y, reward, done, info
 
-    def get_state(self):
-        state = []
-        for y in range(self.screen.get_height()):
-            state.append([])
-            for x in range(self.screen.get_width()):
-                if self.screen.get_at((x, y)) == (0, 0, 0, 255):
-                    state[y].append(0)
-                else:
-                    state[y].append(1)
-        return np.array(state).reshape((1, 210, 160))
+
 
     def action_space(self):
         return 3
@@ -207,6 +198,6 @@ class Game:
         return random.randint(0, self.action_space() - 1)
 
 
-# game = Game(game_mode="human", render=1)
+game = Game(game_mode="human", render=1)
 
 
