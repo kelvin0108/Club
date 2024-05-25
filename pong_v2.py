@@ -25,7 +25,9 @@ class Game:
         self.reset_score()
         self.reset_game()
 
-        return self.ball_x, self.ball_y, self.ball_dir, self.player_y, {"player": self.player_score, "opponent": self.opponent_score}
+        state = (self.ball_x, self.ball_y, self.ball_dir, self.player_y) 
+        
+        return state, {"player": self.player_score, "opponent": self.opponent_score}
 
     def reset_score(self):
         self.player_score = 0
@@ -94,7 +96,7 @@ class Game:
                 action = 2
             else:
                 action = 0
-            self.ball_x, self.ball_y, self.ball_dir, self.player_y, reward, done, info = self.step(action)
+            state, reward, done, info = self.step(action)
             if done:
                 self.reset()
             if reward != 0:
@@ -187,9 +189,9 @@ class Game:
         if self.player_score >= 20 or self.opponent_score >= 20:
             done = True
 
-        return self.ball_x, self.ball_y, self.ball_dir, self.player_y, reward, done, info
-
-
+        state = (self.ball_x, self.ball_y, self.ball_dir, self.player_y)
+        
+        return state, reward, done, info
 
     def action_space(self):
         return 3
