@@ -114,7 +114,7 @@ game_count = 0
 avg_score = 0
 ts = time.time()
 ts_frame = 0
-last_50_score = collections.deque(maxlen=50)
+last_10_score = collections.deque(maxlen=50)
 _neg20, _neg10, _0, _10, _15, _16, _17, _18, _19, _20 = False, False, False, False, False, False, False, False, False, False
 while avg_score < 19.5:
     frame_count += 1
@@ -128,15 +128,15 @@ while avg_score < 19.5:
     if done:
         game_count += 1
 
-        last_50_score.append(info["player"] - info["opponent"])
+        last_10_score.append(info["player"])
         speed = (frame_count - ts_frame) / (time.time() - ts)
         ts = time.time()
         ts_frame = frame_count
-        avg_score = sum(last_50_score) / len(last_50_score)
+        avg_score = sum(last_10_score) / len(last_10_score)
         if key != "No":
-            wandb.log({"game:": game_count, "frame": frame_count, "average score (difference)": avg_score, "epsilon": epsilon, "speed": speed})
+            wandb.log({"game:": game_count, "frame": frame_count, "average score 10": avg_score, "epsilon": epsilon, "speed": speed})
         if game_count % DISPLAY_INTERVAL == 0:
-            print(f"game: {game_count}. frame: {frame_count}. average score: {avg_score:.3f}. epsilon: {epsilon:.2f}. speed: {speed:.2f}f/s.")
+            print(f"game: {game_count}. frame: {frame_count}. average score 10: {avg_score:.3f}. epsilon: {epsilon:.2f}. speed: {speed:.2f}f/s.")
 
         state, info = game.reset()
 
