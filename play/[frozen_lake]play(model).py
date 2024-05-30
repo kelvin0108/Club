@@ -12,7 +12,7 @@ net = nn.Sequential(
     nn.ReLU(),
     nn.Linear(100, 4)
 )
-net.load_state_dict(torch.load("Trained_Models/FrozenLake(96%) (16, 200, 100, 4)"))
+net.load_state_dict(torch.load("../Trained_Models/FrozenLake(96%) (16, 200, 100, 4)"))
 
 state = env.reset()
 

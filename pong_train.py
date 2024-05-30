@@ -1,7 +1,7 @@
+import copy
 import time
 
-from models import dqn
-from environments import pong_v2
+from environments import pong_jesse
 import numpy as np
 
 import collections
@@ -12,45 +12,18 @@ import torch.optim as optim
 import wandb
 
 
-class FrameBuffer:
-    def __init__(self, stack=4):
-        self.stack = stack
-        self.deque = collections.deque(maxlen=stack)
+def weights_init_normal(m):
+    '''Takes in a module and initializes all linear layers with weight
+       values taken from a normal distribution.'''
 
-    def reset(self):
-        self.deque.clear()
-
-    def append(self, state):
-        self.deque.append(state)
-
-    def get_state(self):
-        buffer = np.zeros((self.stack, 160, 210))
-        for i in range(len(self.deque)):
-            buffer[i] = np.array(self.deque[i])
-        return buffer
-
-
-class SkipAndBuffer:
-    def __init__(self, env, skip=4):
-        self.env = env
-        self.skip = skip
-
-    def reset(self):
-        state, info = self.env.reset()
-        return state, info
-
-    def step(self, action):
-        total_reward = 0
-        buffer = np.zeros((self.skip, 160, 210))
-        for i in range(self.skip):
-            state, reward, done, info = self.env.step(action)
-            total_reward += reward
-            buffer[i] = np.array(state)
-            if done:
-                break
-        max_frame = np.max(np.stack(buffer), axis=0)
-        return max_frame, total_reward, done, info
-
+    classname = m.__class__.__name__
+    # for every Linear layer in a model
+    if classname.find('Linear') != -1:
+        y = m.in_features
+        # m.weight.data shoud be taken from a normal distribution
+        m.weight.data.normal_(0.0,1/np.sqrt(y))
+        # m.bias.data should be 0
+        m.bias.data.fill_(0)
 
 class ReplayBuffer:
     def __init__(self, capacity=100):
@@ -87,7 +60,7 @@ def calc_loss(batch, net, tgt_net, gamma):
 
 
 GAMMA = 0.99
-BATCH_SIZE = 32
+BATCH_SIZE = 512
 
 REPLAY_SIZE = 10000
 REPLAY_START_SIZE = 10000
@@ -99,78 +72,73 @@ EPSILON_DECAY_FRAME = 100000
 TGT_SYNC_FRAME = 1000
 LEARNING_RATE = 0.0001
 
-DISPLAY_INTERVAL = 100
+DISPLAY_INTERVAL = 2
 
 Experience = collections.namedtuple("Experience", field_names=["state", "action", "reward", "done", "new_state"])
 
-skip_and_stack = 4
-game = pong_v2.Game(game_mode="ai", render=0)
-env_wrapper = SkipAndBuffer(game, skip=skip_and_stack)
-state, info = env_wrapper.reset()
-buffer = FrameBuffer(stack=skip_and_stack)
-buffer.append(state)
-state = buffer.get_state()
-
-net = dqn.DQN((1, 4, 160, 210), game.action_space())
-tgt_net = dqn.DQN((1, 4, 160, 210), game.action_space())
+layer_and_node = (4, 256, 3)
+net = nn.Sequential(
+    nn.Linear(4, 256),
+    nn.ReLU(),
+    nn.Linear(256, 3)
+)
+# net.apply(weights_init_normal)
+tgt_net = copy.deepcopy(net)
 
 optimizer = optim.Adam(params=net.parameters(), lr=LEARNING_RATE)
 
 replay_buffer = ReplayBuffer(REPLAY_SIZE)
 
-print(net)
+game = pong_jesse.Game(game_mode="ai", render=0)
+state, info = game.reset()
 
 key = input("Please enter wandb authorize key (https://wandb.ai/authorize): ")
-wandb.login(key=key)
-wandb.init(
-    # entity="School Project",
-    project="Pong",
-    name="Attempt01",
-)
+if key != " No":
+    wandb.login(key=key)
+    wandb.init(
+        entity="School Project",
+        project="Pong_2",
+        name="Attempt03 " + str(layer_and_node) + f" (Batch size = {BATCH_SIZE})",
+    )
 
+print(net)
+print(f"Gamma: {GAMMA}.\n"
+      f"Batch Size: {BATCH_SIZE}. Replay Size: {REPLAY_SIZE}. Replay Start Size: {REPLAY_START_SIZE}.\n"
+      f"Epsilon Start: {EPSILON_START}. Epsilon Final: {EPSILON_FINAL}. Epsilon Decay Frame: {EPSILON_DECAY_FRAME}.\n"
+      f"Target Network Sync Frame: {TGT_SYNC_FRAME}.\n"
+      f"Learning Rate: {LEARNING_RATE}.\n\n")
 
 epsilon = EPSILON_START
 frame_count = 0
+game_count = 0
+avg_score = 0
 ts = time.time()
 ts_frame = 0
-game_count = 0
-last_100_games = collections.deque(maxlen=100)
-avg_score = 0
-while avg_score < 18:
-    frame_count += skip_and_stack
+last_50_score = collections.deque(maxlen=50)
+_neg20, _neg10, _0, _10, _15, _16, _17, _18, _19, _20 = False, False, False, False, False, False, False, False, False, False
+while avg_score < 19.5:
+    frame_count += 1
 
-    # action = game.sample_action() if np.random.rand() < epsilon else net(torch.FloatTensor(state.reshape(1, skip, 160, 210))).max(0)[1].item()
-    action = game.sample_action() if np.random.rand() < epsilon else net(torch.FloatTensor(state.reshape(1, skip_and_stack, 160, 210))).max(dim=1)[1].item()
-    new_state, done, reward, info = env_wrapper.step(action)
-    buffer.append(new_state)
-    new_state = buffer.get_state()
+    action = game.sample_action() if np.random.rand() < epsilon else net(torch.FloatTensor(state)).max(0)[1].item()
+    # action = game.sample_action() if np.random.rand() < epsilon else net(torch.FloatTensor(state)).max(dim=1)[1].item()
+    new_state, reward, done, info = game.step(action)
 
     replay_buffer.append(Experience(state, action, reward, done, new_state))
 
     if done:
         game_count += 1
+
+        last_50_score.append(info["player"] - info["opponent"])
         speed = (frame_count - ts_frame) / (time.time() - ts)
-        ts_frame = frame_count
         ts = time.time()
-        last_100_games.append(info["player"])
-        avg_score = sum(last_100_games)/len(last_100_games)
-        wandb.log({"frame": frame_count, "average score": avg_score, "epsilon": epsilon, "speed": speed})
-        print(f"frame: {frame_count}. average score: {avg_score:.3f}. epsilon: {epsilon:.2f}. speed {speed:.2f}f/s.")  # TODO --> can delete.
-        # if game_count % DISPLAY_INTERVAL == 0:
-        #     print(f"frame: {frame_count}. average score: {avg_score:.3f}. epsilon: {epsilon:.2f}. speed {speed:.2f}f/s.")
+        ts_frame = frame_count
+        avg_score = sum(last_50_score) / len(last_50_score)
+        if key != "No":
+            wandb.log({"game:": game_count, "frame": frame_count, "average score (difference)": avg_score, "epsilon": epsilon, "speed": speed})
+        if game_count % DISPLAY_INTERVAL == 0:
+            print(f"game: {game_count}. frame: {frame_count}. average score: {avg_score:.3f}. epsilon: {epsilon:.2f}. speed: {speed:.2f}f/s.")
 
-        state, info = env_wrapper.reset()
-        buffer.reset()
-        buffer.append(state)
-        state = buffer.get_state()
-
-        if frame_count < REPLAY_START_SIZE:
-            continue
-
-        optimizer.zero_grad()
-        loss = calc_loss(replay_buffer.sample(BATCH_SIZE), net, tgt_net, GAMMA)
-        loss.backward()
-        optimizer.step()
+        state, info = game.reset()
 
     state = new_state
     if epsilon > EPSILON_FINAL:
@@ -179,4 +147,43 @@ while avg_score < 18:
     if frame_count % TGT_SYNC_FRAME == 0:
         tgt_net.load_state_dict(net.state_dict())
 
-torch.save(net.state_dict(), f"Pong({avg_score}%)")
+    # Model saving.
+    if avg_score > -20 and not _neg20:
+        torch.save(net.state_dict(), f"Pong({avg_score:.2f}) " + str(layer_and_node))
+        _neg20 = True
+    if avg_score > -10 and not _neg10:
+        torch.save(net.state_dict(), f"Pong({avg_score:.2f}) " + str(layer_and_node))
+        _neg10 = True
+    if avg_score > 0 and not _0:
+        torch.save(net.state_dict(), f"Pong({avg_score:.2f}) " + str(layer_and_node))
+        _0 = True
+    if avg_score > 10 and not _10:
+        torch.save(net.state_dict(), f"Pong({avg_score:.2f}) " + str(layer_and_node))
+        _10 = True
+    if avg_score > 15 and not _15:
+        torch.save(net.state_dict(), f"Pong({avg_score:.2f}) " + str(layer_and_node))
+        _15 = True
+    if avg_score > 16 and not _16:
+        torch.save(net.state_dict(), f"Pong({avg_score:.2f}) " + str(layer_and_node))
+        _16 = True
+    if avg_score > 17 and not _17:
+        torch.save(net.state_dict(), f"Pong({avg_score:.2f}) " + str(layer_and_node))
+        _17 = True
+    if avg_score > 18 and not _18:
+        torch.save(net.state_dict(), f"Pong({avg_score:.2f}) " + str(layer_and_node))
+        _18 = True
+    if avg_score > 19 and not _19:
+        torch.save(net.state_dict(), f"Pong({avg_score:.2f}) " + str(layer_and_node))
+        _19 = True
+
+    if reward != 0:
+        if frame_count < REPLAY_START_SIZE:
+            continue
+
+        optimizer.zero_grad()
+        loss = calc_loss(replay_buffer.sample(BATCH_SIZE), net, tgt_net, GAMMA)
+        loss.backward()
+        optimizer.step()
+
+
+torch.save(net.state_dict(), f"Pong({avg_score:.2f}) " + str(layer_and_node))
