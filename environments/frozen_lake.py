@@ -102,7 +102,7 @@ class Game:
         if self.render:
             pygame.init()
             self.screen = pygame.display.set_mode((TILE_SIZE * GRID_SIZE, TILE_SIZE * GRID_SIZE))
-            pygame.display.set_caption('Grid World Game')
+            pygame.display.set_caption('Frozen Lake')
             self.font = pygame.font.Font(None, 36)
         self.reset()
         if self.game_mode == "human":
@@ -147,8 +147,11 @@ class Game:
             if self.done:
                 if self.reward == 1:
                     self.win = True
-                else:
-                    self.lose = True
+                # else:
+                #     self.lose = True
+            self.draw_grid()
+            pygame.display.flip()
+            time.sleep(0.3)
         return self.get_state(), self.done, self.reward
 
     def get_state(self):
@@ -208,10 +211,7 @@ class Game:
                 font = pygame.font.Font(None, 40)
                 frame_text = font.render("Try Harder!", True, (0, 0, 0))
                 self.screen.blit(frame_text, (100, 230))
-            if self.game_mode == "ai":
-                time.sleep(3)
-                pygame.quit()
-                sys.exit()
+            
         else:
             for y in range(GRID_SIZE):
                 for x in range(GRID_SIZE):
@@ -227,13 +227,13 @@ class Game:
                     self.screen.blit(self.snow_image, (x * TILE_SIZE, y * TILE_SIZE))
                     pygame.draw.rect(self.screen, GRAY, rect, 1)
                     if type == "person":
-                        if self.action == 0:
+                        if self.action == 0 or self.action == 4:
                             self.screen.blit(self.r_image, (x * TILE_SIZE + 20, y * TILE_SIZE + 25))
                         if self.action == 1:
                             self.screen.blit(self.f_image, (x * TILE_SIZE + 20, y * TILE_SIZE + 25))
                         if self.action == 2:
                             self.screen.blit(self.l_image, (x * TILE_SIZE + 20, y * TILE_SIZE + 25))
-                        if self.action == 3:
+                        if self.action == 3 or self.action == -1:
                             self.screen.blit(self.b_image, (x * TILE_SIZE + 20, y * TILE_SIZE + 25))
                         if self.action == None:
                             self.screen.blit(self.r_image, (x * TILE_SIZE + 20, y * TILE_SIZE + 25))
@@ -252,21 +252,24 @@ class Game:
                 if event.type == pygame.QUIT:
                     running = False
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_UP:
-                        self.step(3)
-                    elif event.key == pygame.K_DOWN:
-                        self.step(1)
-                    elif event.key == pygame.K_LEFT:
-                        self.step(2)
-                    elif event.key == pygame.K_RIGHT:
-                        self.step(0)
-            
+                    if event.key == pygame.K_UP or event.key == pygame.K_DOWN or event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                        if event.key == pygame.K_UP:
+                            self.step(3)
+                        elif event.key == pygame.K_DOWN:
+                            self.step(1)
+                        elif event.key == pygame.K_LEFT:
+                            self.step(2)
+                        elif event.key == pygame.K_RIGHT:
+                            self.step(0)
+                        
             if self.render:
                 self.screen.fill(WHITE)
                 self.draw_grid()
                 pygame.display.flip()
-
+                
+                
         
+if __name__ == "__main__":
+    game = Game(is_slippery=1, render=1, max_step=50, game_mode="human", skin="Billy")
 
-game = Game(is_slippery=0, render=1, max_step=50, game_mode="human", skin="Billy")
 
