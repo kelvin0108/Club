@@ -10,12 +10,14 @@ import torch
 import sys
 
 
+
 class Game:
     def __init__(self, game_mode="human", render=1, offset=1, net=None, ball_skin="normal", pad_skin="normal"):
         self.offset = offset
         self.game_mode = game_mode
         self.render = render
         self.net = net
+        self.first = True
 
         pygame.init()
         self.clock = pygame.time.Clock()
@@ -241,7 +243,7 @@ class Game:
         if self.render == 1:
             self.screen.fill((0, 0, 0))
             if self.ball_skin != "normal":
-                self.screen.blit(self.ball_image, (self.ball.x - (self.skin_width/2 - 4), self.ball.y - (self.skin_height/2 - 4)))
+                self.screen.blit(self.ball_image, (int(self.ball_x) - (self.skin_width//2 - 4), int(self.ball_y) - (self.skin_height//2 - 4)))
             else:
                 pygame.draw.rect(self.screen, (255, 255, 255), self.ball)
             if self.pad_skin == "Kelvin":
@@ -251,22 +253,22 @@ class Game:
                 pygame.draw.rect(self.screen, (255, 255, 255), self.player)
                 pygame.draw.rect(self.screen, (255, 255, 255), self.opponent)
             if self.game_mode == "human_ai":
-                font = pygame.font.Font(None, 20)
+                font = pygame.font.Font('freesansbold.ttf', 20)
                 frame_text = font.render(f'{self.player_score}', True, (255, 255, 255))
                 alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
                 alpha_surface.set_alpha(128)  
                 alpha_surface.blit(frame_text, (0, 0))
-                self.screen.blit(alpha_surface, (120, 10))
+                self.screen.blit(alpha_surface, (110, 8))
                 frame_text = font.render(f'{self.opponent_score}', True, (255, 255, 255))
                 alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
                 alpha_surface.set_alpha(128)  
                 alpha_surface.blit(frame_text, (0, 0))
-                self.screen.blit(alpha_surface, (75, 10))
+                self.screen.blit(alpha_surface, (90, 8))
                 frame_text = font.render(':', True, (255, 255, 255))
                 alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
                 alpha_surface.set_alpha(128)  
                 alpha_surface.blit(frame_text, (0, 0))
-                self.screen.blit(alpha_surface, (100, 5))
+                self.screen.blit(alpha_surface, (102, 6))
 
             else:
                 font = pygame.font.Font('freesansbold.ttf', 20)
@@ -286,7 +288,8 @@ class Game:
                 alpha_surface.blit(frame_text, (0, 0))
                 self.screen.blit(alpha_surface, (102, 6))
                 # pygame.draw.aaline(self.screen, (255, 255, 255), (104, 0), (104, 159))
-
+            
+            
             pygame.display.flip()
             self.clock.tick(60 * self.offset)
 
