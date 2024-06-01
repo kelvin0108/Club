@@ -241,11 +241,7 @@ class Game:
         if self.render == 1:
             self.screen.fill((0, 0, 0))
             if self.ball_skin != "normal":
-<<<<<<< HEAD
                 self.screen.blit(self.ball_image, (self.ball.x - (self.skin_width/2 - 4), self.ball.y - (self.skin_height/2 - 4)))
-=======
-                self.screen.blit(self.ball_image, (self.ball.x - self.skin_width/2, self.ball.y - self.skin_height/2))
->>>>>>> 9bba1bfa968784fe25a635643ddd6af39a65e4c4
             else:
                 pygame.draw.rect(self.screen, (255, 255, 255), self.ball)
             if self.pad_skin == "Kelvin":
@@ -293,8 +289,4 @@ class Game:
 
 if __name__ == "__main__":
     game = Game(game_mode="human", render=1, offset=2)
-<<<<<<< HEAD
     game.reset()
-=======
-    game.reset()
->>>>>>> 9bba1bfa968784fe25a635643ddd6af39a65e4c4
