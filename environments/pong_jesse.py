@@ -147,8 +147,8 @@ class Game:
             else:
                 action = 0
             state, reward, done, info = self.step(action)
-            if reward != 0:
-                print(info)
+            # if reward != 0:
+            #     print(info)
             if done:
                 self.reset()
 
@@ -226,8 +226,7 @@ class Game:
 
             self.player.y = self.player_y
         else:
-            if True:   # TODO.
-            # if math.pow(self.opponent_x - self.ball.x, 2) + math.pow(self.opponent_y - self.ball.y, 2) < 10000:
+            if math.pow(self.opponent_x - self.ball.x, 2) + math.pow(self.opponent_y - self.ball.y, 2) < 10000:
                 if abs((self.opponent_y + self.pad_size / 2) - (self.ball.y + 4)) > self.pad_size / 4:
                     if self.opponent_y + self.pad_size / 2 < self.ball.y + 4:
                         self.opponent_y += self.opponent_speed
@@ -256,17 +255,17 @@ class Game:
                 font = pygame.font.Font('freesansbold.ttf', 20)
                 frame_text = font.render(f'{self.player_score}', True, (255, 255, 255))
                 alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                alpha_surface.set_alpha(128)  
+                alpha_surface.set_alpha(128)
                 alpha_surface.blit(frame_text, (0, 0))
                 self.screen.blit(alpha_surface, (110, 8))
                 frame_text = font.render(f'{self.opponent_score}', True, (255, 255, 255))
                 alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                alpha_surface.set_alpha(128)  
+                alpha_surface.set_alpha(128)
                 alpha_surface.blit(frame_text, (0, 0))
                 self.screen.blit(alpha_surface, (90, 8))
                 frame_text = font.render(':', True, (255, 255, 255))
                 alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                alpha_surface.set_alpha(128)  
+                alpha_surface.set_alpha(128)
                 alpha_surface.blit(frame_text, (0, 0))
                 self.screen.blit(alpha_surface, (102, 6))
 
@@ -274,25 +273,23 @@ class Game:
                 font = pygame.font.Font('freesansbold.ttf', 20)
                 frame_text = font.render(f'{self.player_score}', True, (255, 255, 255))
                 alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                alpha_surface.set_alpha(128)  
+                alpha_surface.set_alpha(128)
                 alpha_surface.blit(frame_text, (0, 0))
                 self.screen.blit(alpha_surface, (90, 8))
                 frame_text = font.render(f'{self.opponent_score}', True, (255, 255, 255))
                 alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                alpha_surface.set_alpha(128)  
+                alpha_surface.set_alpha(128)
                 alpha_surface.blit(frame_text, (0, 0))
                 self.screen.blit(alpha_surface, (110, 8))
                 frame_text = font.render(':', True, (255, 255, 255))
                 alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                alpha_surface.set_alpha(128)  
+                alpha_surface.set_alpha(128)
                 alpha_surface.blit(frame_text, (0, 0))
                 self.screen.blit(alpha_surface, (102, 6))
                 # pygame.draw.aaline(self.screen, (255, 255, 255), (104, 0), (104, 159))
-            
-            
+
             pygame.display.flip()
             self.clock.tick(60 * self.offset)
-
 
         # Returns.
         done = False
@@ -312,7 +309,7 @@ class Game:
             self.reset_game()
 
         info = {"player": self.player_score, "opponent": self.opponent_score}
-        if self.player_score >= 20 or self.opponent_score >= 20:
+        if self.player_score >= 3 or self.opponent_score >= 3:
             done = True
 
         state = (self.ball_x, self.ball_y, self.ball_dir, self.player_y)
@@ -327,5 +324,5 @@ class Game:
 
 
 if __name__ == "__main__":
-    game = Game(game_mode="human", render=1, offset=2, ball_skin="Billy", pad_skin="Kelvin")
+    game = Game(game_mode="human", render=1, offset=2)
     game.reset()
