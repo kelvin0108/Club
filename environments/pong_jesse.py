@@ -62,6 +62,20 @@ class Game:
             self.main_loop()
 
     def reset(self):
+        # Setup screen.
+        self.screen_width = 210
+        self.screen_height = 160
+        if self.render == 1:
+            self.screen = pygame.display.set_mode((self.screen_width, self.screen_height), pygame.SCALED)
+            initial_scale_factor = 2  # <-- adjustable
+            window = sdl2.Window.from_display_module()
+            window.size = (self.screen_width * initial_scale_factor, self.screen_height * initial_scale_factor)
+            window.position = sdl2.WINDOWPOS_CENTERED
+            pygame.display.set_caption("Pong")
+            window.show()
+        elif self.render == 0:
+            self.screen = pygame.Surface((self.screen_width, self.screen_height))
+
         self.reset_score()
         self.reset_game()
 
@@ -74,20 +88,6 @@ class Game:
         self.opponent_score = 0
 
     def reset_game(self):
-        # Setup screen.
-        self.screen_width = 210
-        self.screen_height = 160
-        if self.render == 1:
-            self.screen = pygame.display.set_mode((self.screen_width, self.screen_height), pygame.SCALED)
-            initial_scale_factor = 2  # <-- adjustable
-            window = sdl2.Window.from_display_module()
-            window.size = (self.screen_width * initial_scale_factor, self.screen_height * initial_scale_factor)
-            window.position = sdl2.WINDOWPOS_CENTERED
-            window.show()
-            pygame.display.set_caption("Pong")
-        elif self.render == 0:
-            self.screen = pygame.Surface((self.screen_width, self.screen_height))
-
         # Setup object.
         self.ball_x = self.screen_width / 2 - 4
         self.ball_y = self.screen_height / 2 - 4
