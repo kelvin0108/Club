@@ -250,6 +250,41 @@ class Game:
             else:
                 pygame.draw.rect(self.screen, (255, 255, 255), self.player)
                 pygame.draw.rect(self.screen, (255, 255, 255), self.opponent)
+            if self.game_mode == "human_ai":
+                font = pygame.font.Font(None, 80)
+                frame_text = font.render(f'{self.player_score}', True, (255, 255, 255))
+                alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
+                alpha_surface.set_alpha(128)  
+                alpha_surface.blit(frame_text, (0, 0))
+                self.screen.blit(alpha_surface, (120, 60))
+                frame_text = font.render(f'{self.opponent_score}', True, (255, 255, 255))
+                alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
+                alpha_surface.set_alpha(128)  
+                alpha_surface.blit(frame_text, (0, 0))
+                self.screen.blit(alpha_surface, (60, 60))
+                frame_text = font.render(':', True, (255, 255, 255))
+                alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
+                alpha_surface.set_alpha(128)  
+                alpha_surface.blit(frame_text, (0, 0))
+                self.screen.blit(alpha_surface, (95, 55))
+
+            else:
+                font = pygame.font.Font(None, 80)
+                frame_text = font.render(f'{self.player_score}', True, (255, 255, 255))
+                alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
+                alpha_surface.set_alpha(128)  
+                alpha_surface.blit(frame_text, (0, 0))
+                self.screen.blit(alpha_surface, (60, 60))
+                frame_text = font.render(f'{self.opponent_score}', True, (255, 255, 255))
+                alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
+                alpha_surface.set_alpha(128)  
+                alpha_surface.blit(frame_text, (0, 0))
+                self.screen.blit(alpha_surface, (120, 60))
+                frame_text = font.render(':', True, (255, 255, 255))
+                alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
+                alpha_surface.set_alpha(128)  
+                alpha_surface.blit(frame_text, (0, 0))
+                self.screen.blit(alpha_surface, (95, 55))
 
             pygame.display.flip()
             self.clock.tick(60 * self.offset)
@@ -288,5 +323,5 @@ class Game:
 
 
 if __name__ == "__main__":
-    game = Game(game_mode="human", render=1, offset=2)
+    game = Game(game_mode="human", render=1, offset=2, ball_skin="Billy", pad_skin="Kelvin")
     game.reset()
