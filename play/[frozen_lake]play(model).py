@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from environments import frozen_lake
 
-env = frozen_lake.Game(1, 150)
+env = frozen_lake.Game(is_slippery=1, game_mode="ai", max_step=150, render=1, skin="Billy")
 
 net = nn.Sequential(
     nn.Linear(16, 200),
