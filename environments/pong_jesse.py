@@ -5,6 +5,7 @@ from PIL import Image
 from io import BytesIO
 import numpy as np
 import pygame
+import pygame._sdl2 as sdl2
 import torch
 import sys
 
@@ -78,6 +79,11 @@ class Game:
         self.screen_height = 160
         if self.render == 1:
             self.screen = pygame.display.set_mode((self.screen_width, self.screen_height), pygame.SCALED)
+            initial_scale_factor = 2  # <-- adjustable
+            window = sdl2.Window.from_display_module()
+            window.size = (self.screen_width * initial_scale_factor, self.screen_height * initial_scale_factor)
+            window.position = sdl2.WINDOWPOS_CENTERED
+            window.show()
             pygame.display.set_caption("Pong")
         elif self.render == 0:
             self.screen = pygame.Surface((self.screen_width, self.screen_height))
