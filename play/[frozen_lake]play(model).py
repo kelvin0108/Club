@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import sys
 import os
-import time
 
 # 获取当前脚本所在目录的绝对路径
 current_dir = os.path.dirname(__file__)
