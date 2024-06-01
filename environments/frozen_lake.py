@@ -6,7 +6,6 @@ import base64
 from PIL import Image
 from io import BytesIO
 import time
-
 # Define the map parameters and initialize pygame
 H = np.array([[1, 1], [3, 1], [3, 2], [0, 3]])
 G = np.array([3, 3])
@@ -147,11 +146,12 @@ class Game:
             if self.done:
                 if self.reward == 1:
                     self.win = True
-                # else:
-                #     self.lose = True
+                else:
+                    self.lose = True
             self.draw_grid()
             pygame.display.flip()
-            time.sleep(0.3)
+            if self.game_mode == "ai":
+                time.sleep(0.2)
         return self.get_state(), self.done, self.reward
 
     def get_state(self):
