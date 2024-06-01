@@ -28,4 +28,4 @@ net = nn.Sequential(
 net.load_state_dict(torch.load("Trained_Models/Pong/(4, 256, 3)/Pong(15.02) (4, 256, 3)"))
 
 game = pong_jesse.Game(game_mode="human_ai", render=1, net=net, pad_skin="Kelvin", ball_skin="Billy")
-state, info = game.reset()
+# state, info = game.reset()
