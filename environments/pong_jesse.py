@@ -18,6 +18,8 @@ class Game:
         self.render = render
         self.net = net
         self.first = True
+        self.win = False
+        self.lose = False
 
         pygame.init()
         self.clock = pygame.time.Clock()
@@ -67,6 +69,7 @@ class Game:
         # Setup screen.
         self.screen_width = 210
         self.screen_height = 160
+        self.done = False
         if self.render == 1:
             self.screen = pygame.display.set_mode((self.screen_width, self.screen_height), pygame.SCALED)
             initial_scale_factor = 2  # <-- adjustable
@@ -146,148 +149,176 @@ class Game:
                 action = 2
             else:
                 action = 0
-            state, reward, done, info = self.step(action)
+            state, reward, self.done, info = self.step(action)
             if reward != 0:
                 print(info)
-            if done:
-                self.reset()
+            # if self.done:
+            #     self.reset()
 
 
     def step(self, action):
         reward = 0
+        if self.player_score == 3:
+            self.win = True
+        elif self.opponent_score == 3:
+            self.lose = True
+        if not self.done:
+            # Ball Logics.
+            self.ball_x += self.ball_xv
+            self.ball_y += self.ball_yv
+            if self.ball_y + 8 > self.screen_height:
+                self.ball_y = self.screen_height - 8
+                self.ball_dir *= -1
+            if self.ball_y < 0:
+                self.ball_y = 0
+                self.ball_dir *= -1
 
-        # Ball Logics.
-        self.ball_x += self.ball_xv
-        self.ball_y += self.ball_yv
-        if self.ball_y + 8 > self.screen_height:
-            self.ball_y = self.screen_height - 8
-            self.ball_dir *= -1
-        if self.ball_y < 0:
-            self.ball_y = 0
-            self.ball_dir *= -1
+            player_coll = self.ball.colliderect(self.player)
+            opponent_coll = self.ball.colliderect(self.opponent)
 
-        player_coll = self.ball.colliderect(self.player)
-        opponent_coll = self.ball.colliderect(self.opponent)
+            if not player_coll:
+                self.player_en = True
+            if not opponent_coll:
+                self.opponent_en = True
 
-        if not player_coll:
-            self.player_en = True
-        if not opponent_coll:
-            self.opponent_en = True
+            if self.player_en and player_coll:
+                self.ball_dir = math.radians(70 - random.random() * 140)
+                self.ball_speed = 3 / self.offset
+                self.player_en = False
+            if self.opponent_en and opponent_coll:
+                self.ball_dir = math.radians(110 + random.random() * 140)
+                self.ball_speed = 3 / self.offset
+                self.opponent_en = False
 
-        if self.player_en and player_coll:
-            self.ball_dir = math.radians(70 - random.random() * 140)
-            self.ball_speed = 3 / self.offset
-            self.player_en = False
-        if self.opponent_en and opponent_coll:
-            self.ball_dir = math.radians(110 + random.random() * 140)
-            self.ball_speed = 3 / self.offset
-            self.opponent_en = False
+            self.ball.x = self.ball_x
+            self.ball.y = self.ball_y
+            self.ball_xv = math.cos(self.ball_dir) * self.ball_speed
+            self.ball_yv = math.sin(self.ball_dir) * self.ball_speed
 
-        self.ball.x = self.ball_x
-        self.ball.y = self.ball_y
-        self.ball_xv = math.cos(self.ball_dir) * self.ball_speed
-        self.ball_yv = math.sin(self.ball_dir) * self.ball_speed
+            # Player Logics.
+            if self.game_mode == "human_ai":
+                if action == 2:
+                    self.opponent_y += self.opponent_speed
+                if action == 1:
+                    self.opponent_y -= self.opponent_speed
+                if self.opponent_y < 0:
+                    self.opponent_y = 0
+                if self.opponent_y + self.pad_size > self.screen_height:
+                    self.opponent_y = self.screen_height - self.pad_size
 
-        # Player Logics.
-        if self.game_mode == "human_ai":
-            if action == 2:
-                self.opponent_y += self.opponent_speed
-            if action == 1:
-                self.opponent_y -= self.opponent_speed
-            if self.opponent_y < 0:
-                self.opponent_y = 0
-            if self.opponent_y + self.pad_size > self.screen_height:
-                self.opponent_y = self.screen_height - self.pad_size
+                self.opponent.y = self.opponent_y
+            else:
+                if action == 2:
+                    self.player_y += self.player_speed
+                if action == 1:
+                    self.player_y -= self.player_speed
+                if self.player_y < 0:
+                    self.player_y = 0
+                if self.player_y + self.pad_size > self.screen_height:
+                    self.player_y = self.screen_height - self.pad_size
 
-            self.opponent.y = self.opponent_y
-        else:
-            if action == 2:
-                self.player_y += self.player_speed
-            if action == 1:
-                self.player_y -= self.player_speed
-            if self.player_y < 0:
-                self.player_y = 0
-            if self.player_y + self.pad_size > self.screen_height:
-                self.player_y = self.screen_height - self.pad_size
+                self.player.y = self.player_y
 
-            self.player.y = self.player_y
+            # AI Logics.
+            if self.game_mode == "human_ai":
+                act = self.net(torch.FloatTensor((self.ball_x, self.ball_y, self.ball_dir, self.player_y))).max(0)[1].item()
+                if act == 2:
+                    self.player_y += self.player_speed
+                if act == 1:
+                    self.player_y -= self.player_speed
+                if self.player_y < 0:
+                    self.player_y = 0
+                if self.player_y + self.pad_size > self.screen_height:
+                    self.player_y = self.screen_height - self.pad_size
 
-        # AI Logics.
-        if self.game_mode == "human_ai":
-            act = self.net(torch.FloatTensor((self.ball_x, self.ball_y, self.ball_dir, self.player_y))).max(0)[1].item()
-            if act == 2:
-                self.player_y += self.player_speed
-            if act == 1:
-                self.player_y -= self.player_speed
-            if self.player_y < 0:
-                self.player_y = 0
-            if self.player_y + self.pad_size > self.screen_height:
-                self.player_y = self.screen_height - self.pad_size
+                self.player.y = self.player_y
+            else:
+                if True:   # TODO.
+                # if math.pow(self.opponent_x - self.ball.x, 2) + math.pow(self.opponent_y - self.ball.y, 2) < 10000:
+                    if abs((self.opponent_y + self.pad_size / 2) - (self.ball.y + 4)) > self.pad_size / 4:
+                        if self.opponent_y + self.pad_size / 2 < self.ball.y + 4:
+                            self.opponent_y += self.opponent_speed
+                        else:
+                            self.opponent_y -= self.opponent_speed
+                if self.opponent_y < 0:
+                    self.opponent_y = 0
+                if self.opponent_y + self.pad_size > self.screen_height:
+                    self.opponent_y = self.screen_height - self.pad_size
 
-            self.player.y = self.player_y
-        else:
-            if True:   # TODO.
-            # if math.pow(self.opponent_x - self.ball.x, 2) + math.pow(self.opponent_y - self.ball.y, 2) < 10000:
-                if abs((self.opponent_y + self.pad_size / 2) - (self.ball.y + 4)) > self.pad_size / 4:
-                    if self.opponent_y + self.pad_size / 2 < self.ball.y + 4:
-                        self.opponent_y += self.opponent_speed
-                    else:
-                        self.opponent_y -= self.opponent_speed
-            if self.opponent_y < 0:
-                self.opponent_y = 0
-            if self.opponent_y + self.pad_size > self.screen_height:
-                self.opponent_y = self.screen_height - self.pad_size
-
-            self.opponent.y = self.opponent_y
+                self.opponent.y = self.opponent_y
 
         if self.render == 1:
             self.screen.fill((0, 0, 0))
-            if self.ball_skin != "normal":
-                self.screen.blit(self.ball_image, (int(self.ball_x) - (self.skin_width//2 - 4), int(self.ball_y) - (self.skin_height//2 - 4)))
+            if self.win or self.lose:
+                base64_image = b'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'
+                base64_data = base64.b64decode(base64_image)
+                image_data = BytesIO(base64_data)
+                r_image = Image.open(image_data)
+                r_image = r_image.resize((50, 50))
+                self.r_image = pygame.image.fromstring(r_image.tobytes(), r_image.size, r_image.mode)
+                self.screen.blit(self.r_image, (10, 100))
+                if self.win:
+                    font = pygame.font.Font(None, 50)
+                    frame_text = font.render("You Win!", True, (255, 255, 255))
+                    self.screen.blit(frame_text, (10, 20))
+                    font = pygame.font.Font(None, 20)
+                    frame_text = font.render("Good Job!", True, (255, 255, 255))
+                    self.screen.blit(frame_text, (50, 100))
+                else:
+                    font = pygame.font.Font(None, 50)
+                    frame_text = font.render("You Lose...", True, (255, 255, 255))
+                    self.screen.blit(frame_text, (10, 20))
+                    font = pygame.font.Font(None, 20)
+                    frame_text = font.render("Try Harder!", True, (255, 255, 255))
+                    self.screen.blit(frame_text, (50, 100))
+                    
             else:
-                pygame.draw.rect(self.screen, (255, 255, 255), self.ball)
-            if self.pad_skin == "Kelvin":
-                self.screen.blit(self.left_image, (self.player_x, self.player_y))
-                self.screen.blit(self.right_image, (self.opponent_x, self.opponent_y))
-            else:
-                pygame.draw.rect(self.screen, (255, 255, 255), self.player)
-                pygame.draw.rect(self.screen, (255, 255, 255), self.opponent)
-            if self.game_mode == "human_ai":
-                font = pygame.font.Font('freesansbold.ttf', 20)
-                frame_text = font.render(f'{self.player_score}', True, (255, 255, 255))
-                alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                alpha_surface.set_alpha(128)  
-                alpha_surface.blit(frame_text, (0, 0))
-                self.screen.blit(alpha_surface, (110, 8))
-                frame_text = font.render(f'{self.opponent_score}', True, (255, 255, 255))
-                alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                alpha_surface.set_alpha(128)  
-                alpha_surface.blit(frame_text, (0, 0))
-                self.screen.blit(alpha_surface, (90, 8))
-                frame_text = font.render(':', True, (255, 255, 255))
-                alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                alpha_surface.set_alpha(128)  
-                alpha_surface.blit(frame_text, (0, 0))
-                self.screen.blit(alpha_surface, (102, 6))
+                if self.ball_skin != "normal":
+                    self.screen.blit(self.ball_image, (int(self.ball_x) - (self.skin_width//2 - 4), int(self.ball_y) - (self.skin_height//2 - 4)))
+                else:
+                    pygame.draw.rect(self.screen, (255, 255, 255), self.ball)
+                if self.pad_skin == "Kelvin":
+                    self.screen.blit(self.left_image, (self.player_x, self.player_y))
+                    self.screen.blit(self.right_image, (self.opponent_x, self.opponent_y))
+                else:
+                    pygame.draw.rect(self.screen, (255, 255, 255), self.player)
+                    pygame.draw.rect(self.screen, (255, 255, 255), self.opponent)
+                if self.game_mode == "human_ai":
+                    font = pygame.font.Font('freesansbold.ttf', 20)
+                    frame_text = font.render(f'{self.player_score}', True, (255, 255, 255))
+                    alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
+                    alpha_surface.set_alpha(128)  
+                    alpha_surface.blit(frame_text, (0, 0))
+                    self.screen.blit(alpha_surface, (110, 8))
+                    frame_text = font.render(f'{self.opponent_score}', True, (255, 255, 255))
+                    alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
+                    alpha_surface.set_alpha(128)  
+                    alpha_surface.blit(frame_text, (0, 0))
+                    self.screen.blit(alpha_surface, (90, 8))
+                    frame_text = font.render(':', True, (255, 255, 255))
+                    alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
+                    alpha_surface.set_alpha(128)  
+                    alpha_surface.blit(frame_text, (0, 0))
+                    self.screen.blit(alpha_surface, (102, 6))
 
-            else:
-                font = pygame.font.Font('freesansbold.ttf', 20)
-                frame_text = font.render(f'{self.player_score}', True, (255, 255, 255))
-                alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                alpha_surface.set_alpha(128)  
-                alpha_surface.blit(frame_text, (0, 0))
-                self.screen.blit(alpha_surface, (90, 8))
-                frame_text = font.render(f'{self.opponent_score}', True, (255, 255, 255))
-                alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                alpha_surface.set_alpha(128)  
-                alpha_surface.blit(frame_text, (0, 0))
-                self.screen.blit(alpha_surface, (110, 8))
-                frame_text = font.render(':', True, (255, 255, 255))
-                alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                alpha_surface.set_alpha(128)  
-                alpha_surface.blit(frame_text, (0, 0))
-                self.screen.blit(alpha_surface, (102, 6))
-                # pygame.draw.aaline(self.screen, (255, 255, 255), (104, 0), (104, 159))
+                else:
+                    font = pygame.font.Font('freesansbold.ttf', 20)
+                    frame_text = font.render(f'{self.player_score}', True, (255, 255, 255))
+                    alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
+                    alpha_surface.set_alpha(128)  
+                    alpha_surface.blit(frame_text, (0, 0))
+                    self.screen.blit(alpha_surface, (90, 8))
+                    frame_text = font.render(f'{self.opponent_score}', True, (255, 255, 255))
+                    alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
+                    alpha_surface.set_alpha(128)  
+                    alpha_surface.blit(frame_text, (0, 0))
+                    self.screen.blit(alpha_surface, (110, 8))
+                    frame_text = font.render(':', True, (255, 255, 255))
+                    alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
+                    alpha_surface.set_alpha(128)  
+                    alpha_surface.blit(frame_text, (0, 0))
+                    self.screen.blit(alpha_surface, (102, 6))
+                    # pygame.draw.aaline(self.screen, (255, 255, 255), (104, 0), (104, 159))
             
             
             pygame.display.flip()
@@ -295,7 +326,7 @@ class Game:
 
 
         # Returns.
-        done = False
+        
         if self.ball_x + 8 > self.screen_width:
             if self.game_mode == "human_ai":
                 self.opponent_score += 1
@@ -312,12 +343,12 @@ class Game:
             self.reset_game()
 
         info = {"player": self.player_score, "opponent": self.opponent_score}
-        if self.player_score >= 20 or self.opponent_score >= 20:
-            done = True
+        if self.player_score >= 3 or self.opponent_score >= 3:
+            self.done = True
 
         state = (self.ball_x, self.ball_y, self.ball_dir, self.player_y)
 
-        return state, reward, done, info
+        return state, reward, self.done, info
 
     def action_space(self):
         return 3
