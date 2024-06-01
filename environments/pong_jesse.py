@@ -245,7 +245,20 @@ class Game:
                 if self.opponent_y + self.pad_size > self.screen_height:
                     self.opponent_y = self.screen_height - self.pad_size
 
-                self.opponent.y = self.opponent_y
+            self.player.y = self.player_y
+        else:
+            if math.pow(self.opponent_x - self.ball.x, 2) + math.pow(self.opponent_y - self.ball.y, 2) < 10000:
+                if abs((self.opponent_y + self.pad_size / 2) - (self.ball.y + 4)) > self.pad_size / 4:
+                    if self.opponent_y + self.pad_size / 2 < self.ball.y + 4:
+                        self.opponent_y += self.opponent_speed
+                    else:
+                        self.opponent_y -= self.opponent_speed
+            if self.opponent_y < 0:
+                self.opponent_y = 0
+            if self.opponent_y + self.pad_size > self.screen_height:
+                self.opponent_y = self.screen_height - self.pad_size
+
+            self.opponent.y = self.opponent_y
 
         if self.render == 1:
             self.screen.fill((0, 0, 0))
@@ -324,7 +337,6 @@ class Game:
             pygame.display.flip()
             self.clock.tick(60 * self.offset)
 
-
         # Returns.
         
         if self.ball_x + 8 > self.screen_width:
@@ -358,5 +370,5 @@ class Game:
 
 
 if __name__ == "__main__":
-    game = Game(game_mode="human", render=1, offset=2, ball_skin="Billy", pad_skin="Kelvin")
+    game = Game(game_mode="human", render=1, offset=2)
     game.reset()
