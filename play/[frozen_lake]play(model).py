@@ -1,3 +1,4 @@
+import pygame
 import torch
 import torch.nn as nn
 import sys
@@ -30,7 +31,12 @@ if env.render == 0:
 
 total_reward = 0
 while True:
-    
+    for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    pygame.quit()
+                    sys.exit()
+
     action = net(torch.FloatTensor(state)).max(0)[1].item()
     state, done, reward = env.step(action)
 
@@ -42,11 +48,12 @@ while True:
         display_action = "left"
     elif action == 3:
         display_action = "up"
-    print("Action:", display_action, end="\n\n")
-    total_reward += reward
-    if env.render == 0:
-        print(env.show_map(), end="\r")
-    if done:
+    if not done:
+        print("Action:", display_action, end="\n\n")
+        total_reward += reward
+        if env.render == 0:
+            print(env.show_map(), end="\r")
+    if done and not env.win and not env.lose:
         break
 
 print(total_reward)

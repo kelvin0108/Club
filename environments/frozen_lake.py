@@ -118,36 +118,37 @@ class Game:
         assert 0 <= action <= self.action_space_size - 1, f"Error: Action values should fall within the interval [0, {self.action_space_size - 1}]."
         if self.render == 0:
             assert self.done == False, "The game has ended."
-        self.step_count += 1
-        self.action = random.randrange(action - self.is_slippery,
-                                       action + self.is_slippery + 1, 1)
-        old_state = self.state.copy()
-        if self.action == 0 or self.action == 4:
-            self.state[0] += 1
-        elif self.action == 1:
-            self.state[1] += 1
-        elif self.action == 2:
-            self.state[0] -= 1
-        elif self.action == 3 or self.action == -1:
-            self.state[1] -= 1
-        if (self.state > np.array([3, 3])).any() or (self.state < np.array([0, 0])).any():
-            self.state = old_state
-        if (self.state == G).all():
-            self.reward = 1
-            self.done = True
-        for i in range(4):
-            if (self.state == H[i]).all():
+        if not self.done:
+            self.step_count += 1
+            self.action = random.randrange(action - self.is_slippery,
+                                        action + self.is_slippery + 1, 1)
+            old_state = self.state.copy()
+            if self.action == 0 or self.action == 4:
+                self.state[0] += 1
+            elif self.action == 1:
+                self.state[1] += 1
+            elif self.action == 2:
+                self.state[0] -= 1
+            elif self.action == 3 or self.action == -1:
+                self.state[1] -= 1
+            if (self.state > np.array([3, 3])).any() or (self.state < np.array([0, 0])).any():
+                self.state = old_state
+            if (self.state == G).all():
+                self.reward = 1
+                self.done = True
+            for i in range(4):
+                if (self.state == H[i]).all():
+                    self.reward = 0
+                    self.done = True
+            if self.step_count > self.max_step:
                 self.reward = 0
                 self.done = True
-        if self.step_count > self.max_step:
-            self.reward = 0
-            self.done = True
-        if self.render == 1:
-            if self.done:
-                if self.reward == 1:
-                    self.win = True
-                else:
-                    self.lose = True
+            if self.render == 1:
+                if self.done:
+                    if self.reward == 1:
+                        self.win = True
+                    else:
+                        self.lose = True
             self.draw_grid()
             pygame.display.flip()
             if self.game_mode == "ai":
@@ -212,6 +213,7 @@ class Game:
                 frame_text = font.render("Try Harder!", True, (0, 0, 0))
                 self.screen.blit(frame_text, (100, 230))
             
+            
         else:
             for y in range(GRID_SIZE):
                 for x in range(GRID_SIZE):
@@ -266,8 +268,11 @@ class Game:
                 self.screen.fill(WHITE)
                 self.draw_grid()
                 pygame.display.flip()
-                
-                
+                if self.game_mode == "ai":
+                    time.sleep(2)
+            pygame.quit()
+            sys.exit()
+            
         
 if __name__ == "__main__":
     game = Game(is_slippery=1, render=1, max_step=50, game_mode="human", skin="Billy")
