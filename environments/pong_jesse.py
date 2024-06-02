@@ -8,6 +8,8 @@ import pygame
 import pygame._sdl2 as sdl2
 import torch
 import sys
+
+
 class Game:
     def __init__(self, game_mode="human", render=1, offset=1, net=None, ball_skin="normal", pad_skin="normal"):
         self.offset = offset
@@ -57,6 +59,7 @@ class Game:
         self.reset()
         if self.game_mode == "human" or self.game_mode == "human_ai":
             self.main_loop()
+            
     def reset(self):
         # Setup screen.
         self.done = False
@@ -76,9 +79,11 @@ class Game:
         self.reset_game()
         state = (self.ball_x, self.ball_y, self.ball_dir, self.player_y)
         return state, {"player": self.player_score, "opponent": self.opponent_score}
+    
     def reset_score(self):
         self.player_score = 0
         self.opponent_score = 0
+
     def reset_game(self):
         # Setup object.
         self.ball_x = self.screen_width / 2 - 4
@@ -91,6 +96,7 @@ class Game:
         self.opponent_x = self.screen_width - 20 - 4
         self.opponent_y = self.screen_height / 2 - self.pad_size / 2
         self.opponent = pygame.Rect(self.opponent_x, self.opponent_y, 8, self.pad_size)
+
         # Setup movement.
         temp = random.randint(1, 4)
         self.ball_dir = random.uniform((math.pi * (3 * temp - 2)) / 6, (math.pi * (3 * temp - 1)) / 6)
@@ -104,6 +110,7 @@ class Game:
             self.opponent_speed = 1.2 / self.offset
         self.up, self.down = False, False
         self.player_en, self.opponent_en = False, False
+
     def main_loop(self):
         while True:
             for event in pygame.event.get():
@@ -167,6 +174,7 @@ class Game:
             self.ball.y = self.ball_y
             self.ball_xv = math.cos(self.ball_dir) * self.ball_speed
             self.ball_yv = math.sin(self.ball_dir) * self.ball_speed
+
             # Player Logics.
             if self.game_mode == "human_ai":
                 if action == 2:
@@ -203,7 +211,7 @@ class Game:
                 self.player.y = self.player_y
             else:
                 if True:   # TODO.
-                # if math.pow(self.opponent_x - self.ball.x, 2) + math.pow(self.opponent_y - self.ball.y, 2) < 10000:
+                    # if math.pow(self.opponent_x - self.ball.x, 2) + math.pow(self.opponent_y - self.ball.y, 2) < 10000:
                     if math.pow(self.opponent_x - self.ball.x, 2) + math.pow(self.opponent_y - self.ball.y, 2) < 10000:
                         if abs((self.opponent_y + self.pad_size / 2) - (self.ball.y + 4)) > self.pad_size / 4:
                             if self.opponent_y + self.pad_size / 2 < self.ball.y + 4:
@@ -215,6 +223,7 @@ class Game:
                 if self.opponent_y + self.pad_size > self.screen_height:
                     self.opponent_y = self.screen_height - self.pad_size
                 self.opponent.y = self.opponent_y
+
         if self.render == 1:
             self.screen.fill((0, 0, 0))
             if self.win or self.lose:
@@ -254,53 +263,48 @@ class Game:
                     font = pygame.font.Font('freesansbold.ttf', 20)
                     frame_text = font.render(f'{self.player_score}', True, (255, 255, 255))
                     alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                    alpha_surface.set_alpha(128)  
+                    alpha_surface.set_alpha(128)
                     alpha_surface.set_alpha(128)
                     alpha_surface.blit(frame_text, (0, 0))
                     self.screen.blit(alpha_surface, (110, 8))
                     frame_text = font.render(f'{self.opponent_score}', True, (255, 255, 255))
                     alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                    alpha_surface.set_alpha(128)  
+                    alpha_surface.set_alpha(128)
                     alpha_surface.set_alpha(128)
                     alpha_surface.blit(frame_text, (0, 0))
                     self.screen.blit(alpha_surface, (90, 8))
                     frame_text = font.render(':', True, (255, 255, 255))
                     alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                    alpha_surface.set_alpha(128)  
+                    alpha_surface.set_alpha(128)
                     alpha_surface.set_alpha(128)
                     alpha_surface.blit(frame_text, (0, 0))
                     self.screen.blit(alpha_surface, (102, 6))
-
                 else:
                     font = pygame.font.Font('freesansbold.ttf', 20)
                     frame_text = font.render(f'{self.player_score}', True, (255, 255, 255))
                     alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                    alpha_surface.set_alpha(128)  
+                    alpha_surface.set_alpha(128)
                     alpha_surface.set_alpha(128)
                     alpha_surface.blit(frame_text, (0, 0))
                     self.screen.blit(alpha_surface, (90, 8))
                     frame_text = font.render(f'{self.opponent_score}', True, (255, 255, 255))
                     alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                    alpha_surface.set_alpha(128)  
+                    alpha_surface.set_alpha(128)
                     alpha_surface.set_alpha(128)
                     alpha_surface.blit(frame_text, (0, 0))
                     self.screen.blit(alpha_surface, (110, 8))
                     frame_text = font.render(':', True, (255, 255, 255))
                     alpha_surface = pygame.Surface(frame_text.get_size(), pygame.SRCALPHA)
-                    alpha_surface.set_alpha(128)  
+                    alpha_surface.set_alpha(128)
                     alpha_surface.set_alpha(128)
                     alpha_surface.blit(frame_text, (0, 0))
                     self.screen.blit(alpha_surface, (102, 6))
                     # pygame.draw.aaline(self.screen, (255, 255, 255), (104, 0), (104, 159))
 
-
-
             pygame.display.flip()
             self.clock.tick(60 * self.offset)
 
-
         # Returns.
-        
         if self.ball_x + 8 > self.screen_width:
             if self.game_mode == "human_ai":
                 self.opponent_score += 1
@@ -326,8 +330,10 @@ class Game:
 
         state = (self.ball_x, self.ball_y, self.ball_dir, self.player_y)
         return state, reward, self.done, info
+
     def action_space(self):
         return 3
+
     def sample_action(self):
         return random.randint(0, self.action_space() - 1)
 
@@ -336,3 +342,4 @@ if __name__ == "__main__":
     game = Game(game_mode="human", render=1, offset=2, ball_skin="Billy", pad_skin="Kelvin")
     game = Game(game_mode="human", render=1, offset=2)
     game.reset()
+    
